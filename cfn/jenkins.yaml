@@ -235,36 +235,6 @@ Resources:
     Properties:
       InternetGatewayId: !Ref WSO2JenkinsPublicInternetGateway
       VpcId: !Ref WSO2JENKINSVPC
-  WSO2TransitGateway:
-    Type: "AWS::EC2::TransitGateway"
-    Properties:
-      AutoAcceptSharedAttachments: enable
-      DefaultRouteTableAssociation: enable
-      DefaultRouteTablePropagation: enable
-      Description: WSO2 Transit Gateway
-      DnsSupport: disable
-      VpnEcmpSupport: enable
-      Tags:
-        - Key: Name
-          Value: WSO2 Transit Gateway
-  WSO2JenkinsTransitGatewayAttachment:
-    Type: "AWS::EC2::TransitGatewayAttachment"
-    Properties:
-      SubnetIds:
-        - !Ref WSO2JenkinsSubnet1
-      Tags:
-        - Key: Name
-          Value: WSO2 Transit Gateway
-      TransitGatewayId: !Ref WSO2TransitGateway
-      VpcId: !Ref WSO2JENKINSVPC
-    DependsOn: WSO2JenkinsInstance
-  WSO2TransitGatewayRoute:
-     Type: 'AWS::EC2::Route'
-     Properties:
-       RouteTableId: !Ref WSO2JenkinsPublicRouteTable
-       TransitGatewayId: !Ref WSO2TransitGateway
-       DestinationCidrBlock: 10.1.0.0/16
-     DependsOn: WSO2JenkinsTransitGatewayAttachment
   WSO2JenkinsSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -342,7 +312,6 @@ Resources:
           sed -i "s/.*DeploymentPattern.*/env.DeploymentPattern=\'${DeploymentPattern}\'/g" /home/jenkins/jenkins_env
           sed -i "s/.*Email.*/env.Email=\'${Email}\'/g" /home/jenkins/jenkins_env
           sed -i "s/.*IAMRole.*/env.IAMRole=\'${IAMRole}\'/g" /home/jenkins/jenkins_env
-          sed -i "s/.*TransitGatewayId.*/env.TransitGatewayId=\'${WSO2TransitGateway}\'/g" /home/jenkins/jenkins_env
 
           export publichostname=$(ec2metadata --public-hostname)
           sed -i "s/<jenkinsUrl>.*:8080/<\/jenkinsUrl>/<jenkinsUrl>$publichostname:8080<\/jenkinsUrl>/g" /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml
@@ -361,8 +330,6 @@ Resources:
           bash /var/lib/jenkins/update_password.sh ${JenkinsPassword}
           service jenkins restart
           /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource WSO2JenkinsInstance --region ${AWS::Region}
-    DependsOn:
-      - WSO2TransitGateway
 Outputs:
   JenkinsConsoleURL:
     Value: !Sub 'http://${WSO2JenkinsInstance.PublicDnsName}:8080/blue/pipelines'
