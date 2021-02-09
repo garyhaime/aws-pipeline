@@ -247,7 +247,7 @@ node(NODE_MASTER) {
                                      region          : "${env.REGION}",
                                      stackName       : "${STACK_PROD}",
                                      cf              : "${PROD_CF}",
-                                     environment     : "${PROD}",
+                                     environment     : "${PROD}"])
         }
 
         stage(Constants.Stages.RUNNING_TESTS) {
